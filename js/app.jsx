@@ -1,0 +1,1244 @@
+/* ═══════════════════════════════════════════════════════════════
+   ARUN PRASATH G — PORTFOLIO · app.jsx
+   React components loaded via Babel CDN in index.html
+   ═══════════════════════════════════════════════════════════════ */
+
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─────────────────────────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────────────────────────
+const NAV_LINKS = ['about','skills','experience','projects','certifications','contact'];
+
+const NUMBERS = [
+  { num: '8.1',  label: 'Current CGPA' },
+  { num: '2',    label: 'Internships' },
+  { num: '5+',   label: 'Projects Built' },
+  { num: '94%',  label: 'NPTEL Java Score' },
+];
+
+const SKILLS = [
+  { id:'lang', title:'Languages',            category:'lang', tags:['Java','Python','JavaScript','TypeScript','HTML5','CSS3','SQL'] },
+  { id:'fw',   title:'Frameworks & Libraries', category:'fw',   tags:['React.js','Node.js','Express.js','Flask','AngularJS','Streamlit','MediaPipe','OpenCV','NumPy','Pandas'] },
+  { id:'db',   title:'Databases & Tools',    category:'db',   tags:['MySQL','MongoDB','Git','GitHub','Linux','Postman','REST API','Google TTS API'] },
+  { id:'con',  title:'Concepts',             category:'con',  tags:['Data Structures & Algorithms','OOP','Responsive Web Design','REST Architecture','Cross-Browser Compatibility','DOM Manipulation','Agile'] },
+];
+
+const SKILL_BARS = [
+  { name:'Java',        pct:88 },
+  { name:'Python',      pct:82 },
+  { name:'JavaScript',  pct:85 },
+  { name:'React.js',    pct:80 },
+  { name:'Node.js',     pct:75 },
+  { name:'MongoDB',     pct:71 },
+  { name:'TypeScript',  pct:72 },
+  { name:'HTML / CSS',  pct:90 },
+];
+
+const PROJECTS = [
+  {
+    id:1,
+    num:'01 / Accessibility + Computer Vision',
+    name:'Gazelink',
+    subtitle:'— Webcam Eye-Tracking AAC System',
+    featured:true,
+    badge:'Flagship Project',
+    desc:'A hardware-free accessibility tool that converts any standard webcam into a full cursor-control input device for users with ALS, paralysis, or cerebral palsy. No infrared sensor, no calibration rig — just a Python environment and a regular camera.',
+    tags:['Python','MediaPipe','OpenCV','Streamlit','Google TTS'],
+    features:[
+      'MediaPipe FaceLandmarker detects 478 facial landmarks per frame; iris centres mapped to gaze direction.',
+      'Three input signals — iris position for left/right velocity, single-eye winks for up/down, simultaneous blink for click.',
+      'Streamlit symbol board: 48 pre-built phrases across 6 categories, on-screen QWERTY keyboard.',
+      'Google TTS output in 10+ languages — Tamil, Hindi, Telugu and more.',
+    ],
+    impact:'Designed specifically for people with ALS and locked-in syndrome who cannot use standard input devices.',
+    thumbStyle:'eye',
+  },
+  {
+    id:2,
+    num:'02 / Emergency Web App',
+    name:'SOS Emergency Locator',
+    subtitle:'',
+    featured:false,
+    desc:'A real-time SOS web application using the JavaScript Geolocation API to broadcast live GPS coordinates instantly. Mobile-first and fully responsive across all devices — no installation required.',
+    tags:['JavaScript','Geolocation API','HTML5','CSS3'],
+    features:[
+      'One-tap SOS triggers instant GPS location capture.',
+      'Live coordinate broadcast with shareable emergency link.',
+      'Mobile-first design — works on any device with a browser.',
+    ],
+    thumbStyle:'sos',
+  },
+  {
+    id:3,
+    num:'03 / Data Engineering',
+    name:'Data Quality Guardian',
+    subtitle:'',
+    featured:false,
+    desc:'An automated rule-based system for detecting anomalies, deduplicating records, and standardising job function classifications in B2B datasets — producing ML-ready outputs for CRM and analytics pipelines.',
+    tags:['Python','Pandas','Rule-Based'],
+    features:[
+      'Automated anomaly detection across multiple B2B data fields.',
+      'Deduplication pipeline with fuzzy-matching logic.',
+      'Standardised job classification for CRM and ML pipelines.',
+    ],
+    thumbStyle:'data',
+  },
+  {
+    id:4,
+    num:'04 / Backend + Frontend',
+    name:'Flask Backend & Web Portfolio',
+    subtitle:'',
+    featured:false,
+    desc:'A Flask server handling POST form data with complete backend routing — combined with 4 fully responsive static websites (Besnik, Deupload, MoonCafe, HireMe) built with semantic HTML, CSS Grid, and Flexbox.',
+    tags:['Python','Flask','HTML5','CSS3','JavaScript'],
+    features:[
+      'Flask backend with POST routing, form data handling, and error pages.',
+      '4 responsive websites built from design mockups.',
+      'Semantic HTML, CSS Grid, Flexbox across all viewports.',
+    ],
+    thumbStyle:'code',
+  },
+];
+
+const CERTS = [
+  { issuer:'NPTEL — IIT Bombay',    name:'Programming in Java',       detail:'12-Week certification — Elite Category',      score:'94%',     scoreStyle:{} },
+  { issuer:'NPTEL — IIT Kharagpur', name:'Cloud Computing',           detail:'12-Week online certification',                score:'68%',     scoreStyle:{} },
+  { issuer:'Oracle University',     name:'AI Foundations Associate',  detail:'Certified 2024 — Oracle',                    score:'Certified', scoreStyle:{ fontSize:'1rem', marginTop:'20px', color:'var(--amber)' } },
+  { issuer:'HackerRank',            name:'Python (Basic)',            detail:'Verified Skill Certification',               score:'Verified',  scoreStyle:{ fontSize:'1rem', marginTop:'20px', color:'var(--amber)' } },
+  { issuer:'HackerRank',            name:'SQL (Basic)',               detail:'Verified Skill Certification',               score:'Verified',  scoreStyle:{ fontSize:'1rem', marginTop:'20px', color:'var(--amber)' } },
+  { issuer:'LeetCode',              name:'Data Structures & Algorithms', detail:'100+ problems solved across arrays, strings, trees, and graphs', score:'100+', scoreStyle:{} },
+];
+
+// ─────────────────────────────────────────────────────────────────
+// HOOKS
+// ─────────────────────────────────────────────────────────────────
+
+function useTyped(words, speed=90, deleteSpeed=50, pause=1800) {
+  const [display, setDisplay] = useState('');
+  const [wordIdx, setWordIdx] = useState(0);
+  const [charIdx, setCharIdx] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const word = words[wordIdx];
+    let timer;
+    if (!deleting) {
+      if (charIdx < word.length) {
+        timer = setTimeout(() => setCharIdx(c => c + 1), speed);
+      } else {
+        timer = setTimeout(() => setDeleting(true), pause);
+      }
+    } else {
+      if (charIdx > 0) {
+        timer = setTimeout(() => setCharIdx(c => c - 1), deleteSpeed);
+      } else {
+        setDeleting(false);
+        setWordIdx(i => (i + 1) % words.length);
+      }
+    }
+    setDisplay(word.slice(0, charIdx));
+    return () => clearTimeout(timer);
+  }, [charIdx, deleting, wordIdx, words, speed, deleteSpeed, pause]);
+
+  return display;
+}
+
+function useScrollReveal() {
+  useEffect(() => {
+    const els = document.querySelectorAll('.reveal');
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+      });
+    }, { threshold: 0.1 });
+    els.forEach(el => obs.observe(el));
+    return () => obs.disconnect();
+  });
+}
+
+// Animate skill bars when they scroll into view
+function useSkillBars() {
+  useEffect(() => {
+    const bars = document.querySelectorAll('.skill-bar-fill[data-width]');
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting && !e.target.dataset.animated) {
+          e.target.dataset.animated = '1';
+          setTimeout(() => {
+            e.target.style.width = e.target.dataset.width + '%';
+          }, 120);
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.3 });
+    bars.forEach(b => obs.observe(b));
+    return () => obs.disconnect();
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// UTILITY — Draw project canvas thumbnails
+// ─────────────────────────────────────────────────────────────────
+function drawProjectThumb(canvas, style) {
+  if (!canvas) return;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width  || 300;
+  canvas.height = rect.height || 170;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  ctx.fillStyle = '#080E1C';
+  ctx.fillRect(0, 0, w, h);
+
+  if (style === 'eye') {
+    // Iris / webcam pattern
+    const cx = w / 2, cy = h / 2;
+    // Outer glow rings
+    [80, 60, 42, 28].forEach((r, i) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(6,255,204,${0.08 + i * 0.06})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+    // Iris
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 28);
+    grad.addColorStop(0, '#0C2545');
+    grad.addColorStop(1, '#06FFCC22');
+    ctx.beginPath();
+    ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(6,255,204,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Pupil
+    ctx.beginPath();
+    ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+    ctx.fillStyle = '#050A14';
+    ctx.fill();
+    // Highlight
+    ctx.beginPath();
+    ctx.arc(cx - 5, cy - 5, 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(6,255,204,0.8)';
+    ctx.fill();
+    // Scan lines
+    for (let y = 0; y < h; y += 6) {
+      ctx.fillStyle = 'rgba(6,255,204,0.015)';
+      ctx.fillRect(0, y, w, 1);
+    }
+    // Label
+    ctx.fillStyle = 'rgba(6,255,204,0.35)';
+    ctx.font = '500 10px JetBrains Mono, monospace';
+    ctx.fillText('EYE_TRACKING.py :: LIVE', 14, h - 16);
+
+  } else if (style === 'sos') {
+    // GPS / location pattern
+    ctx.strokeStyle = 'rgba(255,80,80,0.15)';
+    ctx.lineWidth = 1;
+    // Concentric circles from top-right
+    const px = w * 0.72, py = h * 0.3;
+    [20, 40, 60, 80, 100].forEach(r => {
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+    // Pin
+    ctx.fillStyle = '#FF5050';
+    ctx.beginPath();
+    ctx.arc(px, py, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#050A14';
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, Math.PI * 2);
+    ctx.fill();
+    // Grid road lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 6;
+    [0.25, 0.5, 0.75].forEach(xr => {
+      ctx.beginPath();
+      ctx.moveTo(w * xr, 0);
+      ctx.lineTo(w * xr, h);
+      ctx.stroke();
+    });
+    [0.33, 0.66].forEach(yr => {
+      ctx.beginPath();
+      ctx.moveTo(0, h * yr);
+      ctx.lineTo(w, h * yr);
+      ctx.stroke();
+    });
+    // SOS text
+    ctx.fillStyle = 'rgba(255,80,80,0.7)';
+    ctx.font = 'bold 22px Syne, sans-serif';
+    ctx.fillText('SOS', 20, h - 20);
+
+  } else if (style === 'data') {
+    // Data table / pipeline pattern
+    const cols = 6, rows = 5;
+    const cw = w / (cols + 1), rh = h / (rows + 2);
+    // Header row
+    ctx.fillStyle = 'rgba(6,255,204,0.12)';
+    ctx.fillRect(0, rh * 0.5, w, rh);
+    for (let c = 0; c < cols; c++) {
+      for (let r = 0; r < rows; r++) {
+        const x = cw * (c + 0.5), y = rh * (r + 1.5) + rh * 0.2;
+        const good = Math.random() > 0.25;
+        ctx.fillStyle = good ? 'rgba(6,255,204,0.25)' : 'rgba(255,80,80,0.3)';
+        const bw = cw * 0.75, bh = rh * 0.5;
+        ctx.fillRect(x, y, bw, bh);
+      }
+    }
+    // Pipeline arrow
+    ctx.fillStyle = 'rgba(255,184,0,0.6)';
+    ctx.font = '600 11px JetBrains Mono, monospace';
+    ctx.fillText('DATA PIPELINE → ML READY', 12, h - 14);
+    // Anomaly highlight
+    ctx.strokeStyle = 'rgba(255,80,80,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(cw * 2.3, rh * 2.0, cw * 1.1, rh * 2.5);
+    ctx.setLineDash([]);
+
+  } else if (style === 'code') {
+    // Code editor window
+    // Window chrome
+    ctx.fillStyle = 'rgba(12,21,38,0.9)';
+    ctx.fillRect(0, 0, w, 28);
+    ctx.strokeStyle = 'rgba(6,255,204,0.1)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(0, 0, w, h);
+    // Traffic lights
+    [{ x:14, c:'#FF5F57' }, { x:30, c:'#FFBD2E' }, { x:46, c:'#28CA41' }].forEach(d => {
+      ctx.beginPath();
+      ctx.arc(d.x, 14, 5, 0, Math.PI * 2);
+      ctx.fillStyle = d.c;
+      ctx.globalAlpha = 0.7;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+    ctx.fillStyle = 'rgba(107,122,150,0.4)';
+    ctx.font = '400 9px JetBrains Mono, monospace';
+    ctx.fillText('app.py — Flask Backend', 64, 18);
+    // Code lines
+    const lines = [
+      { indent:0, color:'rgba(6,255,204,0.8)',  text:'from flask import Flask, request' },
+      { indent:0, color:'rgba(107,122,150,0.6)', text:'' },
+      { indent:0, color:'rgba(6,255,204,0.8)',  text:'app = Flask(__name__)' },
+      { indent:0, color:'rgba(107,122,150,0.6)', text:'' },
+      { indent:0, color:'rgba(255,184,0,0.7)',  text:'@app.route("/submit", methods=["POST"])' },
+      { indent:0, color:'rgba(232,237,245,0.6)', text:'def handle_form():' },
+      { indent:1, color:'rgba(232,237,245,0.5)', text:'  data = request.get_json()' },
+      { indent:1, color:'rgba(6,255,204,0.5)',  text:'  return {"status": "ok"}, 200' },
+    ];
+    lines.forEach((l, i) => {
+      ctx.fillStyle = l.color;
+      ctx.font = '400 9px JetBrains Mono, monospace';
+      ctx.fillText(l.text, 12, 44 + i * 14);
+    });
+    // Line numbers
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = 'rgba(107,122,150,0.3)';
+      ctx.font = '400 8px JetBrains Mono, monospace';
+      ctx.fillText(String(i + 1), 0, 44 + i * 14);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: Cursor
+// ─────────────────────────────────────────────────────────────────
+function Cursor() {
+  useEffect(() => {
+    const cursor = document.getElementById('cursor');
+    const ring   = document.getElementById('cursor-ring');
+    if (!cursor || !ring) return;
+
+    let mx=0, my=0, rx=0, ry=0;
+
+    const move = e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.left = mx + 'px';
+      cursor.style.top  = my + 'px';
+    };
+    document.addEventListener('mousemove', move);
+
+    let raf;
+    const animRing = () => {
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      ring.style.left = rx + 'px';
+      ring.style.top  = ry + 'px';
+      raf = requestAnimationFrame(animRing);
+    };
+    raf = requestAnimationFrame(animRing);
+
+    const addListeners = () => {
+      document.querySelectorAll('a, button').forEach(el => {
+        el.addEventListener('mouseenter', () => {
+          cursor.classList.add('hovering');
+          ring.classList.add('hovering');
+        });
+        el.addEventListener('mouseleave', () => {
+          cursor.classList.remove('hovering');
+          ring.classList.remove('hovering');
+        });
+      });
+    };
+    addListeners();
+    const mo = new MutationObserver(addListeners);
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      document.removeEventListener('mousemove', move);
+      cancelAnimationFrame(raf);
+      mo.disconnect();
+    };
+  }, []);
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: ScrollProgress
+// ─────────────────────────────────────────────────────────────────
+function ScrollProgress() {
+  useEffect(() => {
+    const bar = document.getElementById('scrollProgress');
+    if (!bar) return;
+    const update = () => {
+      const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+      bar.style.width = Math.min(pct, 100) + '%';
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: BackToTop
+// ─────────────────────────────────────────────────────────────────
+function BackToTop() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const check = () => setVisible(window.scrollY > 400);
+    window.addEventListener('scroll', check, { passive: true });
+    return () => window.removeEventListener('scroll', check);
+  }, []);
+  return (
+    <button
+      className={`back-to-top${visible ? ' visible' : ''}`}
+      onClick={() => window.scrollTo({ top:0, behavior:'smooth' })}
+      aria-label="Back to top"
+    >↑</button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: HeroParticleCanvas
+// ─────────────────────────────────────────────────────────────────
+function HeroParticleCanvas() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animId;
+    let particles = [];
+
+    const resize = () => {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      initParticles();
+    };
+
+    const initParticles = () => {
+      const count = Math.floor((canvas.width * canvas.height) / 14000);
+      particles = Array.from({ length: count }, () => ({
+        x:  Math.random() * canvas.width,
+        y:  Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r:  Math.random() * 1.5 + 0.5,
+      }));
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const W = canvas.width, H = canvas.height;
+      const LINK_DIST = 110;
+
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(6,255,204,0.6)';
+        ctx.fill();
+      });
+
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < LINK_DIST) {
+            const alpha = (1 - dist / LINK_DIST) * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(6,255,204,${alpha})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+
+      animId = requestAnimationFrame(draw);
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      id="heroParticles"
+      ref={canvasRef}
+      style={{ position:'absolute', inset:0, width:'100%', height:'100%', zIndex:0, pointerEvents:'none', opacity:0.55 }}
+      aria-hidden="true"
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: Navbar
+// ─────────────────────────────────────────────────────────────────
+function Navbar() {
+  const [scrolled,  setScrolled]  = useState(false);
+  const [active,    setActive]    = useState('');
+  const [menuOpen,  setMenuOpen]  = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 40);
+      // Determine active section
+      NAV_LINKS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          const { top } = el.getBoundingClientRect();
+          if (top <= 120) setActive(id);
+        }
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const goTo = id => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior:'smooth' });
+    setMenuOpen(false);
+  };
+
+  return (
+    <>
+      <nav className={scrolled ? 'scrolled' : ''}>
+        <a href="#hero" className="nav-logo" onClick={e => { e.preventDefault(); window.scrollTo({ top:0, behavior:'smooth' }); }}>
+          &lt;AP<span>/&gt;</span>
+        </a>
+        <ul className="nav-links">
+          {NAV_LINKS.map(id => (
+            <li key={id}>
+              <a
+                className={active === id ? 'active' : ''}
+                onClick={e => { e.preventDefault(); goTo(id); }}
+                href={`#${id}`}
+              >
+                {id.charAt(0).toUpperCase() + id.slice(1)}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <a className="nav-cta" onClick={e => { e.preventDefault(); goTo('contact'); }} href="#contact">
+          Hire Me
+        </a>
+        <button
+          className={`hamburger${menuOpen ? ' open' : ''}`}
+          onClick={() => setMenuOpen(o => !o)}
+          aria-label="Toggle menu"
+        >
+          <span/><span/><span/>
+        </button>
+      </nav>
+
+      <div className={`mobile-menu${menuOpen ? ' open' : ''}`}>
+        {NAV_LINKS.map(id => (
+          <a key={id} href={`#${id}`} onClick={e => { e.preventDefault(); goTo(id); }}>
+            {id.charAt(0).toUpperCase() + id.slice(1)}
+          </a>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: Hero
+// ─────────────────────────────────────────────────────────────────
+function Hero() {
+  const typed = useTyped([
+    'Full-Stack Developer',
+    'React & Node.js Engineer',
+    'Python & ML Enthusiast',
+    'Accessibility Advocate',
+    'Open-Source Contributor',
+  ]);
+
+  return (
+    <section id="hero">
+      <HeroParticleCanvas />
+
+      <div className="hero-left">
+        <div className="hero-tag">
+          <span className="status-dot" aria-hidden="true"/>
+          Available for Internship · 2025–26
+        </div>
+
+        <h1 className="hero-name">
+          Arun<br/>
+          <span className="line-2">Prasath G</span>
+        </h1>
+
+        <p className="hero-role">
+          <span className="typed">{typed}</span>
+          <span className="cursor-blink" aria-hidden="true">_</span>
+        </p>
+
+        <p className="hero-desc">
+          CSE student at Nandha College of Technology building things that solve real problems — from eye-tracking accessibility tools to scalable full-stack applications. I turn complex challenges into elegant, performant software.
+        </p>
+
+        <div className="hero-btns">
+          <a className="btn-primary" href="#projects" onClick={e => { e.preventDefault(); document.getElementById('projects').scrollIntoView({ behavior:'smooth' }); }}>
+            View Projects
+          </a>
+          <a className="btn-ghost" href="Arun_Prasath_Resume_Final.docx" download>
+            Download CV ↓
+          </a>
+        </div>
+
+        <div className="hero-socials">
+          {[
+            {
+              label:'GitHub',
+              href:'https://github.com/arunprasath2103',
+              icon:<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>,
+            },
+            {
+              label:'LinkedIn',
+              href:'https://linkedin.com/in/arun-prasath-78ar',
+              icon:<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>,
+            },
+            {
+              label:'LeetCode',
+              href:'https://leetcode.com/u/Arunprasath',
+              icon:<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.483 0a1.374 1.374 0 0 0-.961.438L7.116 6.226l-3.854 4.126a5.266 5.266 0 0 0-1.209 2.104 5.35 5.35 0 0 0-.125.513 5.527 5.527 0 0 0 .062 2.362 5.83 5.83 0 0 0 .349 1.017 5.938 5.938 0 0 0 1.271 1.818l4.277 4.193.039.038c2.248 2.165 5.852 2.133 8.063-.074l2.396-2.392c.54-.54.54-1.414.003-1.955a1.378 1.378 0 0 0-1.951-.003l-2.396 2.392a3.021 3.021 0 0 1-4.205.038l-.02-.019-4.276-4.193c-.652-.64-.972-1.469-.948-2.263a2.68 2.68 0 0 1 .066-.523 2.545 2.545 0 0 1 .619-1.164L9.13 8.114c1.058-1.134 3.204-1.27 4.43-.278l3.501 2.831c.593.48 1.461.387 1.94-.207a1.384 1.384 0 0 0-.207-1.943l-3.5-2.831c-.8-.647-1.766-1.045-2.774-1.202l2.015-2.158A1.384 1.384 0 0 0 13.483 0zm-2.866 12.815a1.38 1.38 0 0 0-1.38 1.382 1.38 1.38 0 0 0 1.38 1.382H20.79a1.38 1.38 0 0 0 1.38-1.382 1.38 1.38 0 0 0-1.38-1.382z"/></svg>,
+            },
+          ].map(s => (
+            <a key={s.label} href={s.href} target="_blank" rel="noreferrer">
+              {s.icon}{s.label}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div className="hero-right" aria-hidden="true">
+        <div className="hero-visual">
+          <div className="hero-ring"/>
+          <div className="hero-ring"/>
+          <div className="hero-ring"/>
+          <div className="orbit-dot"/>
+          <div className="orbit-dot orbit-dot2"/>
+          <div className="orbit-dot orbit-dot3"/>
+          <div className="hero-card">
+            <div className="hero-avatar">
+              <img src="images/avatar.svg" alt="Arun Prasath G" width="84" height="84"/>
+            </div>
+            <div className="hero-stat-row">
+              <div className="hero-stat">CGPA 8.1</div>
+              <div className="hero-stat">CSE '27</div>
+            </div>
+            <div className="hero-stat-row">
+              <div className="hero-stat">Full Stack</div>
+              <div className="hero-stat">2 Internships</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: NumbersStrip
+// ─────────────────────────────────────────────────────────────────
+function NumbersStrip() {
+  return (
+    <div className="numbers-strip" role="region" aria-label="Key achievements">
+      {NUMBERS.map(({ num, label }) => (
+        <div className="num-block reveal" key={label}>
+          <div className="big-num">{num}</div>
+          <div className="num-label">{label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: About
+// ─────────────────────────────────────────────────────────────────
+function About() {
+  return (
+    <section id="about">
+      <div className="section-inner">
+        <div className="section-label reveal">About Me</div>
+        <h2 className="section-title reveal">
+          Who I <span className="accent">Am</span>
+        </h2>
+        <div className="about-grid">
+          <div className="about-text">
+            <p className="reveal">
+              I am a third-year Computer Science and Engineering student at <strong>Nandha College of Technology</strong>, Tiruppur, maintaining a CGPA of <strong>8.1 / 10</strong>. I build things that solve real problems — whether that is a full-stack web application, a data pipeline, or an eye-tracking accessibility tool that gives a voice to people with ALS.
+            </p>
+            <p className="reveal reveal-delay-1">
+              My technical foundation is in <strong>Java and the MERN stack</strong>, with hands-on experience from two internships and several independent projects. I practice Data Structures and Algorithms consistently on LeetCode and stay close to the open-source ecosystem through GitHub.
+            </p>
+            <p className="reveal reveal-delay-2">
+              Outside of code, I explore emerging technologies and listen to tech podcasts. I believe the best software is built at the intersection of engineering precision and human empathy.
+            </p>
+            <div className="about-stats reveal reveal-delay-3">
+              {[
+                ['8.1', 'Current CGPA'],
+                ['2',   'Internships'],
+                ['5+',  'Projects Built'],
+                ['94%', 'NPTEL Java Score'],
+              ].map(([n, l]) => (
+                <div className="stat-box" key={l}>
+                  <div className="num">{n}</div>
+                  <div className="label">{l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="about-right reveal reveal-delay-2">
+            <div className="about-right-header">
+              <div className="about-avatar">
+                <img src="images/avatar.svg" alt="Arun Prasath G" width="96" height="96"/>
+              </div>
+              <div className="about-name-tag">Arun Prasath G — CSE '27</div>
+            </div>
+
+            {[
+              ['Location', 'Tiruppur, Tamil Nadu, India'],
+              ['Degree', 'B.E. Computer Science & Engineering\nNandha College of Technology, Anna University'],
+              ['Status', '3rd Year — Open to Internships'],
+              ['Email',    <a href="mailto:arunprasathg2103@gmail.com">arunprasathg2103@gmail.com</a>],
+              ['Phone',    <a href="tel:+919042154509">+91 90421 54509</a>],
+              ['LinkedIn', <a href="https://linkedin.com/in/arun-prasath-78ar" target="_blank" rel="noreferrer">linkedin.com/in/arun-prasath-78ar</a>],
+              ['GitHub',   <a href="https://github.com/arunprasath2103" target="_blank" rel="noreferrer">github.com/arunprasath2103</a>],
+              ['LeetCode', <a href="https://leetcode.com/u/Arunprasath" target="_blank" rel="noreferrer">leetcode.com/u/Arunprasath</a>],
+            ].map(([k, v]) => (
+              <div className="info-row" key={k}>
+                <div className="info-key">{k}</div>
+                <div className="info-val" style={{ whiteSpace:'pre-line' }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: Skills
+// ─────────────────────────────────────────────────────────────────
+function Skills() {
+  const [filter, setFilter] = useState('all');
+  useSkillBars();
+
+  const filters = [
+    ['all',  'All'],
+    ['lang', 'Languages'],
+    ['fw',   'Frameworks'],
+    ['db',   'Databases & Tools'],
+    ['con',  'Concepts'],
+  ];
+
+  return (
+    <section id="skills">
+      <div className="section-inner">
+        <div className="section-label reveal">Technical Expertise</div>
+        <h2 className="section-title reveal">
+          Skills &amp; <span className="accent">Stack</span>
+        </h2>
+
+        <div className="skills-filter reveal">
+          {filters.map(([val, label]) => (
+            <button
+              key={val}
+              className={`filter-btn${filter === val ? ' active' : ''}`}
+              onClick={() => setFilter(val)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="skills-grid">
+          {SKILLS.map((g, i) => (
+            <div
+              key={g.id}
+              className={`skill-group reveal reveal-delay-${i}${filter !== 'all' && filter !== g.category ? ' hidden' : ''}`}
+            >
+              <div className="skill-group-title">{g.title}</div>
+              <div className="skill-tags">
+                {g.tags.map(t => <span className="skill-tag" key={t}>{t}</span>)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Proficiency Bars */}
+        <div className="skill-bars-section reveal">
+          <div className="skill-bars-title">Core Proficiency</div>
+          <div className="skill-bars-grid">
+            {SKILL_BARS.map(({ name, pct }) => (
+              <div className="skill-bar-item" key={name}>
+                <div className="skill-bar-header">
+                  <span className="skill-bar-name">{name}</span>
+                  <span className="skill-bar-pct">{pct}%</span>
+                </div>
+                <div className="skill-bar-track">
+                  <div
+                    className="skill-bar-fill"
+                    data-width={pct}
+                    style={{ width: 0 }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: Experience
+// ─────────────────────────────────────────────────────────────────
+function Experience() {
+  return (
+    <section id="experience">
+      <div className="section-inner">
+        <div className="section-label reveal">Work History</div>
+        <h2 className="section-title reveal">
+          Internship <span className="accent">Experience</span>
+        </h2>
+        <div className="timeline">
+          <div className="timeline-item reveal">
+            <div className="timeline-left">
+              <div className="timeline-date">Jun 2025 — Jul 2025</div>
+              <div className="timeline-co">Crescent Infotech</div>
+              <div className="timeline-loc">Tiruppur, India</div>
+            </div>
+            <div className="timeline-right">
+              <div className="timeline-role">Full Stack Development Intern</div>
+              <ul className="timeline-bullets">
+                <li>Developed and deployed full-stack web features using React.js, Node.js, and MongoDB, handling both frontend UI and backend server integration throughout the project lifecycle.</li>
+                <li>Implemented REST API endpoints, managed JSON data flow between client and server, and resolved cross-browser compatibility issues across multiple application modules.</li>
+                <li>Earned a formal commendation from management for self-discipline, leadership, and proactive delivery of tasks ahead of schedule.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="timeline-item reveal reveal-delay-1">
+            <div className="timeline-left">
+              <div className="timeline-date">Dec 2024 — Jan 2025</div>
+              <div className="timeline-co">IIT Ropar — NPTEL</div>
+              <div className="timeline-loc">Remote</div>
+            </div>
+            <div className="timeline-right">
+              <div className="timeline-role">MERN Stack Intern (Winter Internship)</div>
+              <ul className="timeline-bullets">
+                <li>Selected for a nationally competitive internship via NPTEL's ViBe platform hosted by IIT Ropar; mastered TypeScript, MongoDB, React.js, and Express.js through 30+ timed daily leaderboard sessions among 50+ interns nationwide.</li>
+                <li>Delivered 5+ hands-on case studies of increasing complexity; passed a structured viva evaluation and earned the official NPTEL completion certificate.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: ProjectThumb (canvas-based thumbnail)
+// ─────────────────────────────────────────────────────────────────
+function ProjectThumb({ style }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      drawProjectThumb(canvasRef.current, style);
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [style]);
+  return (
+    <div className="project-thumb">
+      <canvas ref={canvasRef} aria-hidden="true"/>
+      <div className="project-thumb-overlay">
+        <div className="project-preview-btn">Preview →</div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: ProjectModal
+// ─────────────────────────────────────────────────────────────────
+function ProjectModal({ project, onClose }) {
+  useEffect(() => {
+    const onKey = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return (
+    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
+        {project.badge && <div className="modal-badge">{project.badge}</div>}
+        <div className="modal-title" id="modal-title">
+          {project.name && project.subtitle
+            ? <><span className="accent">{project.name}</span>{project.subtitle}</>
+            : project.name}
+        </div>
+        <p className="modal-desc">{project.desc}</p>
+        <div className="modal-tags">
+          {project.tags.map(t => <span className="project-tag" key={t}>{t}</span>)}
+        </div>
+        {project.features && (
+          <>
+            <div className="modal-section-title">Key Features</div>
+            <ul className="modal-features">
+              {project.features.map((f, i) => <li key={i}>{f}</li>)}
+            </ul>
+          </>
+        )}
+        {project.impact && (
+          <>
+            <div className="modal-section-title">Impact</div>
+            <p style={{ fontSize:'0.9rem', color:'var(--muted)', lineHeight:1.85 }}>{project.impact}</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: Projects
+// ─────────────────────────────────────────────────────────────────
+function Projects() {
+  const [modal, setModal] = useState(null);
+  const featured = PROJECTS[0];
+  const rest = PROJECTS.slice(1);
+
+  return (
+    <section id="projects">
+      <div className="section-inner">
+        <div className="section-label reveal">Selected Work</div>
+        <h2 className="section-title reveal">
+          Projects I'm <span className="accent">Proud Of</span>
+        </h2>
+
+        <div className="projects-grid">
+          {/* Featured card */}
+          <div className="project-card featured reveal">
+            <div style={{ display:'flex', flexDirection:'column' }}>
+              <ProjectThumb style={featured.thumbStyle} />
+              <div className="project-body">
+                <div className="project-featured-badge">{featured.badge}</div>
+                <div className="project-num">{featured.num}</div>
+                <div className="project-name">
+                  <span className="accent">{featured.name}</span>{featured.subtitle}
+                </div>
+                <p className="project-desc">{featured.desc}</p>
+                <div className="project-tags">
+                  {featured.tags.map(t => <span className="project-tag" key={t}>{t}</span>)}
+                </div>
+                <button className="project-view-btn" onClick={() => setModal(featured)}>
+                  View Details
+                </button>
+              </div>
+            </div>
+            <div className="project-card-right">
+              <ul className="feature-list">
+                {featured.features.map((f, i) => <li key={i}>{f}</li>)}
+              </ul>
+            </div>
+          </div>
+
+          {/* Rest of projects */}
+          {rest.map((p, i) => (
+            <div
+              key={p.id}
+              className={`project-card reveal reveal-delay-${i % 3}`}
+              style={{ display:'flex', flexDirection:'column' }}
+            >
+              <ProjectThumb style={p.thumbStyle} />
+              <div className="project-body">
+                <div className="project-num">{p.num}</div>
+                <div className="project-name">{p.name}</div>
+                <p className="project-desc">{p.desc}</p>
+                <div className="project-tags">
+                  {p.tags.map(t => <span className="project-tag" key={t}>{t}</span>)}
+                </div>
+                <button className="project-view-btn" onClick={() => setModal(p)}>
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {modal && <ProjectModal project={modal} onClose={() => setModal(null)} />}
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: Certifications
+// ─────────────────────────────────────────────────────────────────
+function Certifications() {
+  return (
+    <section id="certifications">
+      <div className="section-inner">
+        <div className="section-label reveal">Credentials</div>
+        <h2 className="section-title reveal">
+          Certifications &amp; <span className="accent">Achievements</span>
+        </h2>
+        <div className="certs-grid">
+          {CERTS.map((c, i) => (
+            <div
+              key={i}
+              className={`cert-card reveal reveal-delay-${i % 4}`}
+            >
+              <div className="cert-issuer">{c.issuer}</div>
+              <div className="cert-name">{c.name}</div>
+              <div className="cert-detail">{c.detail}</div>
+              <div className="cert-score" style={c.scoreStyle}>{c.score}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: Toast
+// ─────────────────────────────────────────────────────────────────
+function Toast({ message, type, onDone }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 4000);
+    return () => clearTimeout(t);
+  }, [onDone]);
+
+  return (
+    <div className={`toast ${type}`} role="alert">
+      {type === 'success'
+        ? <span className="toast-accent">✓ </span>
+        : <span style={{ color:'#ff8080' }}>✗ </span>}
+      {message}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: Contact
+// ─────────────────────────────────────────────────────────────────
+function Contact() {
+  const [form,   setForm]   = useState({ name:'', email:'', message:'' });
+  const [status, setStatus] = useState(null);
+  const [toast,  setToast]  = useState(null);
+
+  const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  const handleSubmit = async () => {
+    const { name, email, message } = form;
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      setToast({ type:'error', msg:'Please fill in all fields.' });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setToast({ type:'error', msg:'Please enter a valid email address.' });
+      return;
+    }
+    setStatus('sending');
+    await new Promise(r => setTimeout(r, 1400));
+    setStatus('success');
+    setForm({ name:'', email:'', message:'' });
+    setToast({ type:'success', msg:`Message received, ${name.split(' ')[0]}! Arun will get back to you soon.` });
+  };
+
+  return (
+    <section id="contact">
+      <div className="section-inner">
+        <div className="section-label reveal">Get In Touch</div>
+        <h2 className="section-title reveal">
+          Let's Build <span className="accent">Something</span>
+        </h2>
+
+        <div className="contact-wrapper">
+          <div className="contact-left">
+            <p className="reveal">
+              I am actively looking for internship opportunities in software development and full-stack engineering. If you have an opening, a project idea, or just want to connect — reach out through any of the channels below.
+            </p>
+
+            <div className="contact-links">
+              {[
+                { platform:'Email',    handle:'arunprasathg2103@gmail.com',            href:'mailto:arunprasathg2103@gmail.com',            arrow:'↗' },
+                { platform:'LinkedIn', handle:'linkedin.com/in/arun-prasath-78ar',     href:'https://linkedin.com/in/arun-prasath-78ar',     arrow:'↗' },
+                { platform:'GitHub',   handle:'github.com/arunprasath2103',            href:'https://github.com/arunprasath2103',            arrow:'↗' },
+                { platform:'LeetCode', handle:'leetcode.com/u/Arunprasath',            href:'https://leetcode.com/u/Arunprasath',            arrow:'↗' },
+                { platform:'Resume',   handle:'Download CV — Arun Prasath G',          href:'Arun_Prasath_Resume_Final.docx',               arrow:'↓', download:true },
+              ].map((l, i) => (
+                <a
+                  key={l.platform}
+                  className={`contact-link reveal reveal-delay-${i}`}
+                  href={l.href}
+                  target={!l.download ? '_blank' : undefined}
+                  rel="noreferrer"
+                  download={l.download || undefined}
+                >
+                  <div className="contact-link-left">
+                    <div className="contact-link-platform">{l.platform}</div>
+                    <div className="contact-link-handle">{l.handle}</div>
+                  </div>
+                  <div className="contact-link-arrow">{l.arrow}</div>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div className="contact-right reveal reveal-delay-2">
+            <div className="contact-form">
+              <div className="form-field">
+                <label htmlFor="name">Your Name</label>
+                <input
+                  id="name" type="text" name="name"
+                  placeholder="Jane Smith"
+                  value={form.name} onChange={handleChange}
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="email">Email Address</label>
+                <input
+                  id="email" type="email" name="email"
+                  placeholder="jane@company.com"
+                  value={form.email} onChange={handleChange}
+                />
+              </div>
+              <div className="form-field">
+                <label htmlFor="message">Message</label>
+                <textarea
+                  id="message" name="message"
+                  placeholder="Tell me about your opportunity or project..."
+                  value={form.message} onChange={handleChange}
+                />
+              </div>
+              <button
+                className="form-submit"
+                onClick={handleSubmit}
+                disabled={status === 'sending'}
+              >
+                {status === 'sending' ? 'Sending...' : 'Send Message →'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {toast && (
+        <Toast
+          key={toast.msg}
+          type={toast.type}
+          message={toast.msg}
+          onDone={() => setToast(null)}
+        />
+      )}
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COMPONENT: Footer
+// ─────────────────────────────────────────────────────────────────
+function Footer() {
+  return (
+    <footer>
+      <div className="footer-left">
+        Designed &amp; Built by <span>Arun Prasath G</span> &mdash; Tiruppur, Tamil Nadu &copy; 2025
+      </div>
+      <div className="footer-right">CSE Student &mdash; Nandha College of Technology</div>
+    </footer>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ROOT APP
+// ─────────────────────────────────────────────────────────────────
+function App() {
+  useScrollReveal();
+
+  return (
+    <>
+      <Cursor />
+      <ScrollProgress />
+      <BackToTop />
+      <Navbar />
+      <Hero />
+      <NumbersStrip />
+      <About />
+      <Skills />
+      <Experience />
+      <Projects />
+      <Certifications />
+      <Contact />
+      <Footer />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
